@@ -1,0 +1,7 @@
+- [] Set up sdl3 window
+- [] Set up inputs
+- [] draw a square onto the screen
+- [] stretch that square to make a paddle
+- [] ability to move paddle left and right
+- [] create a ball
+- [] Move ball
