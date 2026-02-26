@@ -10,6 +10,7 @@ Game :: struct {
     event: SDL.Event,
 
     player: SDL.FRect,
+    block: SDL.FRect,
 }
 
 SCREEN_WIDTH :: 1280
@@ -41,6 +42,24 @@ player :: proc(game: ^Game) {
     SDL.RenderFillRect(game.renderer, &game.player)
 }
 
+render_blocks :: proc(game: ^Game) {
+    cols :: 12
+    padding :: 5
+    block_w := f32(SCREEN_WIDTH - (padding * (cols + 1))) / cols
+
+    for x in 0..<cols {
+        for y in 0..<5 {
+            game.block.w = block_w
+            game.block.h = 30
+            game.block.x = f32(x) * (block_w + padding) + padding
+            game.block.y = f32(y) * (game.block.h + 5) + 5
+
+            SDL.SetRenderDrawColor(game.renderer, 255, 255, 255, 255)
+            SDL.RenderFillRect(game.renderer, &game.block)
+        }
+    }
+}
+
 main_loop :: proc(game: ^Game) {
     for {
         for SDL.PollEvent(&game.event) {
@@ -53,6 +72,7 @@ main_loop :: proc(game: ^Game) {
             SDL.RenderClear(game.renderer)
 
             player(game)
+            render_blocks(game)
 
             SDL.RenderPresent(game.renderer)
     }
