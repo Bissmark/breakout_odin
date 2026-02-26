@@ -11,9 +11,7 @@ Game :: struct {
     renderer: ^SDL.Renderer,
     event: SDL.Event,
 
-    //player: SDL.FRect,
-    block: SDL.FRect,
-    //ball: SDL.FRect,
+    blocks: [60]Block,
 }
 
 Player :: struct {
@@ -27,6 +25,11 @@ Ball :: struct {
     velocity: Vec2,
     position: Vec2,
     speed: f32
+}
+
+Block :: struct {
+    rect: SDL.FRect,
+    active: bool,
 }
 
 SCREEN_WIDTH :: 1280
@@ -47,13 +50,26 @@ initialize :: proc(game: ^Game, player: ^Player, ball: ^Ball) -> bool {
 
     SDL.SetRenderVSync(game.renderer, 1)
 
-    // player.rect.w = 100
-    // player.rect.h = 10
+    cols :: 12
+    rows :: 5
+    padding :: 5
+    block_w := f32(SCREEN_WIDTH - (padding * (cols + 1))) / cols
+
+    for i in 0..<60 {
+        x := i % cols
+        y := i / cols
+        game.blocks[i].rect.w = block_w
+        game.blocks[i].rect.h = 30
+        game.blocks[i].rect.x = f32(x) * (block_w + padding) + padding
+        game.blocks[i].rect.y = f32(y) * (30 + padding) + padding
+        game.blocks[i].active = true
+    }
+
     player.rect.x = SCREEN_WIDTH / 2 - player.rect.w / 2
     player.rect.y = SCREEN_HEIGHT - (player.rect.h + 5)
     player.position.x = player.rect.x
     player.position.y = player.rect.y
-    player.speed = 1
+    player.speed = 5
 
     ball.rect.x = SCREEN_WIDTH / 2 - (player.rect.w / 2 - 45)
     ball.rect.y = SCREEN_HEIGHT - (player.rect.h + 20)
@@ -65,7 +81,7 @@ initialize :: proc(game: ^Game, player: ^Player, ball: ^Ball) -> bool {
     return true
 }
 
-update :: proc(player: ^Player, ball: ^Ball) {
+update :: proc(game: ^Game, player: ^Player, ball: ^Ball) {
     key_states := SDL.GetKeyboardState(nil);
 
     if key_states[SDL.Scancode.A] {
@@ -81,37 +97,33 @@ update :: proc(player: ^Player, ball: ^Ball) {
     ball.rect.x = ball.position.x
     ball.rect.y = ball.position.y
 
-    // if ball.position.x < SCREEN_WIDTH {
-    //     ball.velocity.x *= -1
+    // if ball.position.x >= game.block.x {
+    //     ball.speed = 0
     // }
+
+    for &block in game.blocks {
+        if SDL.HasRectIntersectionFloat(block.rect, ball.rect) {
+            block.active = false;
+            ball.velocity.y *= -1
+        }
+    }
+    //fmt.printf("ball x: %f, ball y: %f\n", ball.position.x, ball.position.y)
 }
 
 render_player :: proc(game: ^Game, player: ^Player) {
     player.rect.w = 100
     player.rect.h = 10
-    // player.rect.x = SCREEN_WIDTH / 2 - player.rect.w / 2
-    // player.rect.y = SCREEN_HEIGHT - (player.rect.h + 5)
-    // player.position.x = player.rect.x
-    // player.position.y = player.rect.y
 
     SDL.SetRenderDrawColor(game.renderer, 255, 255, 255, 255)
     SDL.RenderFillRect(game.renderer, &player.rect)
 }
 
 render_blocks :: proc(game: ^Game) {
-    cols :: 12
-    padding :: 5
-    block_w := f32(SCREEN_WIDTH - (padding * (cols + 1))) / cols
 
-    for x in 0..<cols {
-        for y in 0..<5 {
-            game.block.w = block_w
-            game.block.h = 30
-            game.block.x = f32(x) * (block_w + padding) + padding
-            game.block.y = f32(y) * (game.block.h + 5) + 5
-
+    for &block in game.blocks {
+        if block.active {
             SDL.SetRenderDrawColor(game.renderer, 255, 255, 255, 255)
-            SDL.RenderFillRect(game.renderer, &game.block)
+            SDL.RenderFillRect(game.renderer, &block.rect)
         }
     }
 }
@@ -133,7 +145,7 @@ main_loop :: proc(game: ^Game, player: ^Player, ball: ^Ball) {
                 }
             }
 
-            update(player, ball)
+            update(game, player, ball)
             SDL.SetRenderDrawColor(game.renderer, 0, 0, 0, 255)
             SDL.RenderClear(game.renderer)
 
