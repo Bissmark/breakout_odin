@@ -31,7 +31,7 @@ Ball :: struct {
 SCREEN_WIDTH :: 1280
 SCREEN_HEIGHT :: 720
 
-initialize :: proc(game: ^Game) -> bool {
+initialize :: proc(game: ^Game, player: ^Player) -> bool {
     game.window = SDL.CreateWindow("Breakout", SCREEN_WIDTH, SCREEN_HEIGHT, {})
     if game.window == nil {
         log.error("Failed to create window:", SDL.GetError())
@@ -44,20 +44,37 @@ initialize :: proc(game: ^Game) -> bool {
         return false
     }
 
-
+    // player.rect.w = 100
+    // player.rect.h = 10
+    player.rect.x = SCREEN_WIDTH / 2 - player.rect.w / 2
+    player.rect.y = SCREEN_HEIGHT - (player.rect.h + 5)
+    player.position.x = player.rect.x
+    player.position.y = player.rect.y
+    player.speed = 1
 
     return true
 }
 
-update :: proc(game: ^Game) {
+update :: proc(player: ^Player) {
+    key_states := SDL.GetKeyboardState(nil);
 
+    if (key_states[SDL.Scancode.A]) {
+        player.position.x -= f32(player.speed)
+        player.rect.x =  player.position.x
+    }
+    if (key_states[SDL.Scancode.D]) {
+        player.position.x += f32(player.speed)
+        player.rect.x =  player.position.x
+    }
 }
 
 render_player :: proc(game: ^Game, player: ^Player) {
     player.rect.w = 100
     player.rect.h = 10
-    player.rect.x = SCREEN_WIDTH / 2 - player.rect.w / 2
-    player.rect.y = SCREEN_HEIGHT - (player.rect.h + 5)
+    // player.rect.x = SCREEN_WIDTH / 2 - player.rect.w / 2
+    // player.rect.y = SCREEN_HEIGHT - (player.rect.h + 5)
+    // player.position.x = player.rect.x
+    // player.position.y = player.rect.y
 
     SDL.SetRenderDrawColor(game.renderer, 255, 255, 255, 255)
     SDL.RenderFillRect(game.renderer, &player.rect)
@@ -99,6 +116,8 @@ main_loop :: proc(game: ^Game, player: ^Player, ball: ^Ball) {
                     return
                 }
             }
+
+            update(player)
             SDL.SetRenderDrawColor(game.renderer, 0, 0, 0, 255)
             SDL.RenderClear(game.renderer)
 
@@ -117,7 +136,7 @@ main :: proc() {
     player: Player
     ball: Ball
 
-    if !initialize(&game) do return
+    if !initialize(&game, &player) do return
     main_loop(&game, &player, &ball)
 
     SDL.DestroyRenderer(game.renderer)
