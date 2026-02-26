@@ -97,17 +97,29 @@ update :: proc(game: ^Game, player: ^Player, ball: ^Ball) {
     ball.rect.x = ball.position.x
     ball.rect.y = ball.position.y
 
-    // if ball.position.x >= game.block.x {
-    //     ball.speed = 0
-    // }
-
     for &block in game.blocks {
-        if SDL.HasRectIntersectionFloat(block.rect, ball.rect) {
+        if block.active && SDL.HasRectIntersectionFloat(block.rect, ball.rect) {
             block.active = false;
             ball.velocity.y *= -1
+            break
         }
     }
-    //fmt.printf("ball x: %f, ball y: %f\n", ball.position.x, ball.position.y)
+
+    if ball.position.x <= 0 {
+        ball.velocity.x *= -1
+    }
+    if ball.position.x + ball.rect.w >= SCREEN_WIDTH {
+        ball.velocity *= -1
+    }
+    if ball.position.y <= 0 {
+        ball.velocity.y *= -1
+    }
+    if ball.position.y >= SCREEN_HEIGHT {
+        fmt.printf("Game Over")
+    }
+    if SDL.HasRectIntersectionFloat(ball.rect, player.rect) {
+        ball.velocity.y *= -1
+    }
 }
 
 render_player :: proc(game: ^Game, player: ^Player) {
@@ -119,7 +131,6 @@ render_player :: proc(game: ^Game, player: ^Player) {
 }
 
 render_blocks :: proc(game: ^Game) {
-
     for &block in game.blocks {
         if block.active {
             SDL.SetRenderDrawColor(game.renderer, 255, 255, 255, 255)
